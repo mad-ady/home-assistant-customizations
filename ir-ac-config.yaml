@@ -1,0 +1,68 @@
+#This is a configuration snippet that should go into your configuration.yaml form Home Assistant
+
+input_slider:
+  lg_ac_temperature:
+    name: AC Temperature
+    initial: 22
+    min: 18
+    max: 30
+    step: 1
+
+input_select:
+  lg_ac_fan_mode:
+    name: Fan mode
+    options:
+      - cycle
+      - low
+      - med
+      - high
+    initial: 'low'
+
+switch:
+  - platform: mqtt
+    command_topic: 'ha/lg_ac/power/set'
+    state_topic: 'ha/lg_ac/power/get'
+    payload_on: 'ON'
+    payload_off: 'OFF'
+    name: 'AC Power'
+    retain: false
+  - platform: mqtt
+    command_topic: 'ha/lg_ac/ionizer/set'
+    state_topic: 'ha/lg_ac/ionizer/get'
+    payload_on: 'ON'
+    payload_off: 'OFF'
+    name: 'AC Ionizer'
+    retain: true
+  - platform: mqtt
+    command_topic: 'ha/lg_ac/jet/set'
+    state_topic: 'ha/lg_ac/jet/get'
+    payload_on: 'ON'
+    payload_off: 'OFF'
+    name: 'AC Jet'
+    retain: true
+  - platform: mqtt
+    command_topic: 'ha/lg_ac/swing/set'
+    state_topic: 'ha/lg_ac/swing/get'
+    payload_on: 'ON'
+    payload_off: 'OFF'
+    name: 'AC Swing'
+    retain: true
+
+#make a group for better visibility
+group:
+  lg_ac:
+    name: Air Conditioning
+    view: yes
+    entities:
+      - group.lg_ac_group
+  lg_ac_group:
+    name: LG AC
+    entities:
+      - switch.ac_power
+      - input_slider.lg_ac_temperature
+      - input_select.lg_ac_fan_mode
+      - switch.ac_jet
+      - switch.ac_ionizer
+      - switch.ac_swing
+
+

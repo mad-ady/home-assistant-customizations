@@ -1,0 +1,51 @@
+#The automations should go under your automations.yaml file in Home Assistant
+
+- action:
+  - alias: LG AC MQTT Set Temperature
+    data:
+      payload_template: '{{ states.input_slider.lg_ac_temperature.state }}'
+      qos: 0
+      retain: true
+      topic: ha/lg_ac/temperature/set
+    service: mqtt.publish
+  alias: LG AC Set IR temperature
+  id: '1499081218012'
+  trigger:
+  - entity_id: input_slider.lg_ac_temperature
+    platform: state
+- action:
+  - alias: LG AC MQTT Set Fan
+    data:
+      payload_template: '{{ states.input_select.lg_ac_fan_mode.state }}'
+      qos: 0
+      retain: true
+      topic: ha/lg_ac/fan/set
+    service: mqtt.publish
+  alias: LG AC Set IR Fan
+  id: '1499152161'
+  trigger:
+  - entity_id: input_select.lg_ac_fan_mode
+    platform: state
+- action:
+  - alias: LG AC Set temperature slider
+    service: input_slider.select_value
+    data_template:
+      entity_id: input_slider.lg_ac_temperature
+      value: '{{trigger.payload}}'
+  alias: LG AC Read temperature via MQTT
+  id: '1499423002'
+  trigger:
+  - platform: mqtt
+    topic: "ha/lg_ac/temperature/get"
+- action:
+  - alias: LG AC Set fan combo box
+    service: input_select.select_option
+    data_template:
+      entity_id: input_select.lg_ac_fan_mode
+      option: '{{trigger.payload}}'
+  alias: LG AC Read temperature via MQTT
+  id: '1499423003'
+  trigger:
+  - platform: mqtt
+    topic: "ha/lg_ac/fan/get"
+
