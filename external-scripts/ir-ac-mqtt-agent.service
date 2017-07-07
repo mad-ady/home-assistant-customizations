@@ -1,0 +1,13 @@
+[Unit]
+Description=IR AC MQTT Agent
+After=network.target
+
+[Service]
+ExecStart=/home/adrianp/bin/ir-ac-mqtt-agent.py
+Type=simple
+Restart=yes
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+

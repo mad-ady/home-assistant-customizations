@@ -1,0 +1,5 @@
+mqttServer: '127.0.0.1'
+mqttPort: 1883
+mqttUser: 'homeassistant'
+mqttPass: 'your-super-secret-mqtt-password'
+
