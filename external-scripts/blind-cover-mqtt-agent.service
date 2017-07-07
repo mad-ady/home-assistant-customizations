@@ -1,0 +1,13 @@
+[Unit]
+Description=Blind Cover MQTT Agent
+After=network.target
+
+[Service]
+ExecStart=/home/adrianp/bin/blind-cover-mqtt-agent.py
+Type=simple
+Restart=yes
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
