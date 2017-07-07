@@ -1,0 +1,22 @@
+#This is a configuration snippet which should go in Home Assistant, under configuration.yaml
+
+cover:
+  - platform: mqtt
+    name: "Blinds"
+    state_topic: "ha/blind_cover/get"
+    command_topic: "ha/blind_cover/set"
+    payload_open: 'OPEN'
+    payload_close: 'CLOSE'
+    payload_stop: 'STOP'
+    state_open: 'open'
+    state_close: 'closed'
+
+
+#a special tab for viewing
+group:
+    blinds:
+    name: Blinds
+    view: yes
+    entities:
+      - cover.blinds
+
