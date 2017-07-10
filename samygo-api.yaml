@@ -1,0 +1,129 @@
+#This should be part of your HA configuration.yaml
+
+#define sensors. The JSONREST sensor makes the query and stores all metadata
+#while the templated sensors extract the metadata from the JSONREST sensor
+sensor:
+  - platform: jsonrest
+    resource: !secret samygo_tv_living_channelinfo
+    method: GET
+    name: TV Living ChannelInfo
+    scan_interval: '00:05'
+  - platform: template
+    sensors:
+      tv_living_source:
+        value_template: '{{ states.sensor.tv_living_channelinfo.attributes.source }}'
+        friendly_name: TV Living Source
+      tv_living_pvr_status:
+        value_template: '{{ states.sensor.tv_living_channelinfo.attributes.pvr_status }}'
+        friendly_name: TV Living PVR Status
+      tv_living_powerstate:
+        value_template: '{{ states.sensor.tv_living_channelinfo.attributes.power_state }}'
+        friendly_name: TV Living Power
+      tv_living_tv_mode:
+        value_template: '{{ states.sensor.tv_living_channelinfo.attributes.tv_mode }}'
+        friendly_name: TV Living TV Mode
+      tv_living_volume:
+        value_template: '{{ states.sensor.tv_living_channelinfo.attributes.volume }}'
+        friendly_name: TV Living Volume
+      tv_living_channel_number:
+        value_template: '{{ states.sensor.tv_living_channelinfo.attributes.channel_number }}'
+        friendly_name: TV Living Channel Number
+      tv_living_channel_name:
+        value_template: '{{ states.sensor.tv_living_channelinfo.attributes.channel_name }}'
+        friendly_name: TV Living Channel Name
+      tv_living_program_name:
+        value_template: '{{ states.sensor.tv_living_channelinfo.attributes.program_name }}'
+        friendly_name: TV Living Program Name
+
+#remote control commands
+rest_command:
+  tv_living_power_on:
+    url: !secret samygo_tv_living_power_on
+  tv_living_power_off:
+    url: !secret samygo_tv_living_power_off
+  tv_living_mute:
+    url: !secret samygo_tv_living_mute
+  tv_living_source:
+    url: !secret samygo_tv_living_source
+  tv_living_volume_up:
+    url: !secret samygo_tv_living_volume_up
+  tv_living_volume_down:
+    url: !secret samygo_tv_living_volume_down
+  tv_living_ch_up:
+    url: !secret samygo_tv_living_ch_up
+  tv_living_ch_down:
+    url: !secret samygo_tv_living_ch_down
+  tv_living_reboot:
+    url: !secret samygo_tv_living_reboot
+
+script:
+  tv_living_power_on:
+    alias: Power on
+    sequence:
+      - service: rest_command.tv_living_power_on
+  tv_living_power_off:
+    alias: Power off
+    sequence:
+      - service: rest_command.tv_living_power_off
+  tv_living_mute:
+    alias: Mute
+    sequence:
+      - service: rest_command.tv_living_mute
+  tv_living_source:
+    alias: Source
+    sequence:
+      - service: rest_command.tv_living_source
+  tv_living_volume_up:
+    alias: Volume +
+    sequence:
+      - service: rest_command.tv_living_volume_up
+  tv_living_volume_down:
+    alias: Volume -
+    sequence:
+      - service: rest_command.tv_living_volume_down
+  tv_living_ch_up:
+    alias: CH +
+    sequence:
+      - service: rest_command.tv_living_ch_up
+  tv_living_ch_down:
+    alias: CH -
+    sequence:
+      - service: rest_command.tv_living_ch_down
+
+#screenshot is using a camera entity
+camera:
+   platform: generic
+   name: TV Living Image
+   still_image_url: !secret webcam_samygo_tv_living
+
+#group TV data in one tab
+group:
+  tv:
+    name: TV
+    view: yes
+    entities:
+      - group.tv_status
+      - camera.tv_living_image
+      - group.tv_remote
+  tv_status:
+    name: TV Status
+    entities:
+      - sensor.tv_living_powerstate
+      - sensor.tv_living_volume
+      - sensor.tv_living_tv_mode
+      - sensor.tv_living_source
+      - sensor.tv_living_channel_name
+      - sensor.tv_living_channel_number
+      - sensor.tv_living_program_name
+  tv_remote:
+    name: TV Remote
+    entities:
+      - script.tv_living_power_on
+      - script.tv_living_power_off
+      - script.tv_living_source
+      - script.tv_living_mute
+      - script.tv_living_volume_up
+      - script.tv_living_volume_down
+      - script.tv_living_ch_up
+      - script.tv_living_ch_down
+
