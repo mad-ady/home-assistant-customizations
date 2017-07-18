@@ -58,6 +58,11 @@ def on_message(client, userdata, msg):
     if msg.topic == 'ha/lg_ac/power/set':
         if msg.payload == 'ON' or msg.payload == 'OFF':
             processCommand('power', msg.payload)
+            if msg.payload == 'OFF':
+                #on power off, disable jet, ionizer and swing
+                for item in ['jet', 'ionizer', 'swing']:
+                    currentState[item] = False
+                    client.publish('ha/lg_ac/'+item+'/get', 'OFF', 0, False)
     if msg.topic == 'ha/lg_ac/jet/set':
         if currentState['power'] == True:
             if msg.payload == 'ON' or msg.payload == 'OFF':
@@ -84,7 +89,8 @@ def on_message(client, userdata, msg):
             #The payload should be a temperature
             temperature = int(float(msg.payload))
             if temperature >= 18 and temperature <= 30:
-                #if the temperature is the same as the internal state, don't set it
+                #if the temperature is the same as the internal state, don't set it. 
+                #it avoids an annoying extra beep when setting Jet=ON
                 if temperature != currentState['temperature']:
                     processCommand('temperature', temperature)
     if msg.topic == 'ha/lg_ac/fan/set':
