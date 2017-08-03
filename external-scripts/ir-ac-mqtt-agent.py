@@ -81,6 +81,13 @@ def on_message(client, userdata, msg):
                 for item in ['jet', 'ionizer']:
                     currentState[item] = False
                     client.publish('ha/lg_ac/'+item+'/get', 'OFF', 0, False)
+            else:
+                #power on sets temperature to 21C, fan to high
+                currentState['temperature'] = 21
+                client.publish('ha/lg_ac/temperature/get', '21', 0, False)
+                currentState['fan'] = 'high'
+                client.publish('ha/lg_ac/fan/get', 'high', 0, False)
+
 
     """
     Handle the pressing of the Jet (or Turbo) button
