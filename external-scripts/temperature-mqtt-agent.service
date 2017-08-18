@@ -1,0 +1,12 @@
+[Unit]
+Description=Temperature MQTT Agent
+After=network.target
+
+[Service]
+ExecStart=/home/adrianp/bin/temperature-mqtt-agent.py
+Type=simple
+Restart=yes
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
