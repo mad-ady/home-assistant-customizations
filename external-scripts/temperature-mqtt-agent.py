@@ -4,6 +4,7 @@ import re
 import time
 import sys
 import yaml
+
 # Prerequisites:
 # * pip: sudo apt-get install python-pip
 # * paho-mqtt: pip install paho-mqtt
@@ -20,42 +21,23 @@ filename = '/sys/devices/w1_bus_master1/28-05168661eaff/w1_slave'
 valid = False
 oldValue = 0
 
-"""
-Parse and load the configuration file to get MQTT credentials
-"""
+""" Parse and load the configuration file to get MQTT credentials """
 
-conf=[]
-with open("/etc/temperature-mqtt-agent.yaml", 'r') as stream:
-    try:
-       conf = yaml.load(stream)
-    except yaml.YAMLError as exc:
-       print(exc)
-       print("Unable to parse configuration file /etc/temperature-mqtt-agent.yaml")
-       sys.exit(1)
+conf = {}
 
-mqttServer = conf['mqttServer']
-mqttPort = conf['mqttPort']
-mqttUser = conf['mqttUser']
-mqttPass = conf['mqttPass']
-mqttTopic = conf['mqttTopic']
-mqttPersistent = conf['mqttPersistent']
-sleep = conf['sleep']
+def parseConfig():
+    global conf
+    with open("/etc/temperature-mqtt-agent.yaml", 'r') as stream:
+        try:
+            conf = yaml.load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+            print("Unable to parse configuration file /etc/temperature-mqtt-agent.yaml")
+            sys.exit(1)
 
-"""
-Initialize the MQTT object and connect to the server
-"""
+""" Read temperature from sysfs and return it as a string """
 
-client = mqtt.Client()
-if mqttUser and mqttPass:
-    client.username_pw_set(username=mqttUser, password=mqttPass)
-client.connect(mqttServer, mqttPort, 60)
-
-"""
-Do an infinite loop reading temperatures and sending them via MQTT
-"""
-
-while(True):
-    # execute the command and parse each line of output
+def readTemperature():
     with open(filename) as f:
         for line in f:
             if re.search('crc=.*YES', line):
@@ -67,11 +49,23 @@ while(True):
                 temperature = re.search('t=([0-9]+)', line)
                 # convert to degrees celsius and keep 1 digit of accuracy
                 output = "%.1f" % (float(temperature.group(1)) / 1000.0)
-                # publish the output value via MQTT if the value has changed
-                if oldValue != output:
-                    print("Temperature changed from %f to %f" % (float(oldValue), float(output)))
-                    client.publish(mqttTopic, output, 0, mqttPersistent)
-                    oldValue = output
+                return output
+
+""" Initialize the MQTT object and connect to the server """
+parseConfig()
+client = mqtt.Client()
+if conf['mqttUser'] and conf['mqttPass']:
+    client.username_pw_set(username=conf['mqttUser'], password=conf['mqttPass'])
+client.connect(conf['mqttServer'], conf['mqttPort'], 60)
+
+""" Do an infinite loop reading temperatures and sending them via MQTT """
+
+while (True):
+    newValue = readTemperature()
+    # publish the output value via MQTT if the value has changed
+    if oldValue != newValue:
+        print("Temperature changed from %f to %f" % (float(oldValue), float(newValue)))
+        client.publish(conf['mqttTopic'], newValue, 0, conf['mqttPersistent'])
+        oldValue = newValue
     # sleep for a while
-#    print("Sleeping "+str(sleep))
-    time.sleep(sleep)
+    time.sleep(conf['sleep'])
