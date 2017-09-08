@@ -1,0 +1,6 @@
+mqttServer: 127.0.0.1
+mqttPort: 1883
+mqttUser: odroid
+mqttPass: odroid
+command_topic: ha/heater/set
+state_topic: ha/heater/get
