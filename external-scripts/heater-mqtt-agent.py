@@ -1,15 +1,13 @@
 #!/usr/bin/python
+from __future__ import print_function  # Only needed for Python 2
 import paho.mqtt.client as mqtt
-import re
-import time
 import sys
 import yaml
-import wiringpi2 as wpi
+import os
 
 # Prerequisites:
 # * pip: sudo apt-get install python-pip
 # * paho-mqtt: pip install paho-mqtt
-# * wiringPi: http://odroid.com/dokuwiki/doku.php?id=en:c1_tinkering#python_example
 # * python-yaml: sudo apt-get install python-yaml
 
 # Configuration file goes in /etc/heater-mqtt-agent.yaml and should contain your mqtt broker details
@@ -22,6 +20,9 @@ import wiringpi2 as wpi
 """ Parse and load the configuration file to get MQTT credentials """
 
 conf = {}
+heaterRelay = 131  # GPIO 131 on Odroid C2, J7 connector, pin 6.
+heaterOff = 0
+heaterOn = 1
 
 def parseConfig():
     global conf
@@ -32,6 +33,19 @@ def parseConfig():
             print(exc)
             print("Unable to parse configuration file /etc/heater-mqtt-agent.yaml")
             sys.exit(1)
+
+# Export the pin and set direction
+def pinMode(pinNumber, value):
+    if not os.path.isdir("/sys/class/gpio/gpio" + str(pinNumber)):
+        with open("/sys/class/gpio/export", 'w') as export:
+            print(pinNumber, file=export)
+    with open("/sys/class/gpio/gpio" + str(pinNumber) + "/direction", 'w') as direction:
+        print(value, file=direction)
+
+# Write a 1 or a 0 to the pin
+def digitalWrite(pinNumber, value):
+    with open("/sys/class/gpio/gpio" + str(pinNumber) + "/value", 'w') as val:
+        print(value, file=val)
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
@@ -53,26 +67,19 @@ def on_message(client, userdata, msg):
     if msg.topic == conf['command_topic']:
         if msg.payload == 'ON':
             # turn on the heater
-            wpi.digitalWrite(heaterRelay, heaterOn)
+            digitalWrite(heaterRelay, heaterOn)
             # we can now say that the heater is on
             client.publish(conf['state_topic'], "ON", 0, False)
 
         if msg.payload == 'OFF':
             # turn off the heater
-            wpi.digitalWrite(heaterRelay, heaterOff)
+            digitalWrite(heaterRelay, heaterOff)
             # we can now say that the heater is off
             client.publish(conf['state_topic'], "OFF", 0, False)
 
-# initialize wiringPi to use /sys/class/gpio numbers
-wpi.wiringPiSetupSys()
-
 #initialize the relay pin
-heaterRelay = 131  # GPIO 131 on Odroid C2, J7 connector, pin 6.
-heaterOff = 0
-heaterOn = 1
-
-wpi.pinMode(heaterRelay, 1) # output mode
-wpi.digitalWrite(heaterRelay, heaterOff) # set the heater to off by default
+pinMode(heaterRelay, 'out') # output mode
+digitalWrite(heaterRelay, heaterOff) # set the heater to off by default
 
 """ Initialize the MQTT object and connect to the server """
 parseConfig()
