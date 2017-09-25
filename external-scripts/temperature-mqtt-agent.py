@@ -25,6 +25,7 @@ oldValue = 0
 
 conf = {}
 
+
 def parseConfig():
     global conf
     with open("/etc/temperature-mqtt-agent.yaml", 'r') as stream:
@@ -35,7 +36,9 @@ def parseConfig():
             print("Unable to parse configuration file /etc/temperature-mqtt-agent.yaml")
             sys.exit(1)
 
+
 """ Read temperature from sysfs and return it as a string """
+
 
 def readTemperature():
     with open(filename) as f:
@@ -49,7 +52,9 @@ def readTemperature():
                 temperature = re.search('t=([0-9]+)', line)
                 # convert to degrees celsius and keep 1 digit of accuracy
                 output = "%.1f" % (float(temperature.group(1)) / 1000.0)
+#                print("Temperature is "+str(output))
                 return output
+
 
 """ Initialize the MQTT object and connect to the server """
 parseConfig()
@@ -57,6 +62,7 @@ client = mqtt.Client()
 if conf['mqttUser'] and conf['mqttPass']:
     client.username_pw_set(username=conf['mqttUser'], password=conf['mqttPass'])
 client.connect(conf['mqttServer'], conf['mqttPort'], 60)
+client.loop_start()
 
 """ Do an infinite loop reading temperatures and sending them via MQTT """
 
@@ -65,7 +71,9 @@ while (True):
     # publish the output value via MQTT if the value has changed
     if oldValue != newValue:
         print("Temperature changed from %f to %f" % (float(oldValue), float(newValue)))
+        sys.stdout.flush()
         client.publish(conf['mqttTopic'], newValue, 0, conf['mqttPersistent'])
         oldValue = newValue
     # sleep for a while
+#    print("Sleeping...")
     time.sleep(conf['sleep'])
