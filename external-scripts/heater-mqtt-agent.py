@@ -21,8 +21,8 @@ import os
 
 conf = {}
 heaterRelay = 131  # GPIO 131 on Odroid C2, J7 connector, pin 6.
-heaterOff = 0
-heaterOn = 1
+heaterOff = 1
+heaterOn = 0
 
 def parseConfig():
     global conf
