@@ -7,9 +7,8 @@ current = 0
 group = []
 
 print("Interval duration is "+str(duration)+" minutes")
-print("======== Cut here and paste to switch: section  =====")
-print("  - platform: template")
-print("    switches:")
+print("======== Cut here and paste to input_boolean: section  =====")
+
 for i in range(0, intervals, 1):
     # calculate time interval
     if i > 0:
@@ -18,18 +17,10 @@ for i in range(0, intervals, 1):
     timestamp = '{:02d}_{:02d}'.format(*divmod(int(current), 60))
     readableTimestamp = '{:02d}:{:02d}'.format(*divmod(int(current), 60))
     #print the config subsection
-    print("""      heater_timer_%s:
-        friendly_name: Heater timer %s 
-        value_template: "{{ is_state('switch.heater_timer_%s', 'on') }}"
-        turn_on:
-          service: automation.trigger
-          data:
-            entity_id: automation.heater_timer_changed
-        turn_off:
-          service: automation.trigger
-          data:
-            entity_id: automation.heater_timer_changed
-        icon_template: mdi:fire"""%(timestamp, readableTimestamp, timestamp))
+    print("""  heater_timer_%s:
+    name: Heater timer %s 
+    initial: off
+    icon: mdi:fire"""%(timestamp, readableTimestamp))
     (hours, minutes) = divmod(int(current), 60)
     groupid = hours//4
     #calculate a reasonable name for the timer group
@@ -47,7 +38,7 @@ for i in range(0, intervals, 1):
     name: Timer group %s - %s
     entities:"""%(groupid, startTime, endTime))
 
-    group[groupid]+="""\n     - switch.heater_timer_%s"""%(timestamp)
+    group[groupid]+="""\n     - input_boolean.heater_timer_%s"""%(timestamp)
 
 print("============== Cut here and paste to group section ============")
 for item in group:
@@ -55,6 +46,7 @@ for item in group:
 
 print("""  heater_timer_group:
     name: Heater timer
+    control: hidden
     entities:""")
 for i in range(0, len(group), 1):
     print("    - group.heater_timer_group_%d"%(i))
