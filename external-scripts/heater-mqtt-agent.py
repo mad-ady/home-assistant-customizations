@@ -68,19 +68,24 @@ def on_message(client, userdata, msg):
         if msg.payload == 'ON':
             # turn on the heater
             digitalWrite(heaterRelay, heaterOn)
+            print("Turned heater ON")
+            sys.stdout.flush()
             # we can now say that the heater is on
-            client.publish(conf['state_topic'], "ON", 0, False)
+            client.publish(conf['state_topic'], "ON", 0, conf['mqttPersistent'])
 
         if msg.payload == 'OFF':
             # turn off the heater
             digitalWrite(heaterRelay, heaterOff)
+            print("Turned heater OFF")
             # we can now say that the heater is off
-            client.publish(conf['state_topic'], "OFF", 0, False)
+            client.publish(conf['state_topic'], "OFF", 0, conf['mqttPersistent'])
 
 #initialize the relay pin
 pinMode(heaterRelay, 'out') # output mode
 digitalWrite(heaterRelay, heaterOff) # set the heater to off by default
-
+print("Set GPIO "+str(heaterRelay)+" as out")
+print("Set heater OFF by default")
+sys.stdout.flush()
 """ Initialize the MQTT object and connect to the server """
 parseConfig()
 client = mqtt.Client()
@@ -90,4 +95,6 @@ if conf['mqttUser'] and conf['mqttPass']:
     client.username_pw_set(username=conf['mqttUser'], password=conf['mqttPass'])
 client.connect(conf['mqttServer'], conf['mqttPort'], 60)
 #listen for messages and call on_message when needed
+print("Listen to MQTT messages...")
+sys.stdout.flush()
 client.loop_forever()

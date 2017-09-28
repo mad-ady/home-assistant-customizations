@@ -4,3 +4,4 @@ mqttUser: odroid
 mqttPass: odroid
 command_topic: ha/heater/set
 state_topic: ha/heater/get
+mqttPersistent: True
