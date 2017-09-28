@@ -1,39 +1,37 @@
 #!/usr/bin/python
 import paho.mqtt.client as mqtt
-import syslog
 import time
-from subprocess import call
 import wiringpi2 as wpi
 import yaml
 import sys
 
-#Prerequisites:
+# Prerequisites:
 # * pip: sudo apt-get install python-pip 
 # * wiringPi: http://odroid.com/dokuwiki/doku.php?id=en:c1_tinkering#python_example
 # * paho-mqtt: pip install paho-mqtt
 # * python-yaml: sudo apt-get install python-yaml
 
-#Configuration file goes in /etc/blind-cover-mqtt-agent.yaml and should contain your mqtt broker details
+# Configuration file goes in /etc/blind-cover-mqtt-agent.yaml and should contain your mqtt broker details
 
-#For startup copy blind-cover-mqtt-agent.service to /etc/systemd/system/
-#Startup is done via systemd with
+# For startup copy blind-cover-mqtt-agent.service to /etc/systemd/system/
+# Startup is done via systemd with
 # sudo systemctl enable blind-cover-mqtt-agent
 # sudo systemctl start blind-cover-mqtt-agent
 
-conf=[]
-with open("/etc/blind-cover-mqtt-agent.yaml", 'r') as stream:
-    try:
-       conf = yaml.load(stream)
-    except yaml.YAMLError as exc:
-        print(exc)
-        print("Unable to parse configuration file /etc/blind-cover-mqtt-agent.yaml")
-        sys.exit(1)
 
-mqttServer = conf['mqttServer']
-mqttPort = conf['mqttPort']
-mqttTopics = ['ha/blind_cover/set' ]
-mqttUser = conf['mqttUser']
-mqttPass = conf['mqttPass']
+""" Parse and load the configuration file to get MQTT credentials """
+
+conf={}
+
+def parseConfig():
+    global conf
+    with open("/etc/blind-cover-mqtt-agent.yaml", 'r') as stream:
+        try:
+           conf = yaml.load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+            print("Unable to parse configuration file /etc/blind-cover-mqtt-agent.yaml")
+            sys.exit(1)
 
 #initialize wiringPi
 wpi.wiringPiSetup()
@@ -48,7 +46,7 @@ coverModeManual = 1 #the cover is controlled by the physical switch
 coverDirectionUp = 1 #the cover should raise
 coverDirectionDown = 0 #the cover should lower
 
-coverOperationTime = 17 #maximum time in seconds for the motor to raise or lower the cover
+coverOperationTime = 17 #maximum time in seconds for the motor to raise or lower the cover from start to finish
 
 #initialize the pins - output, with manual control by default
 wpi.pinMode(coverModePin, 1)
@@ -58,15 +56,13 @@ wpi.pinMode(coverDirectionPin, 1)
 wpi.digitalWrite(coverDirectionPin, coverDirectionUp) #has no effect as long as the cover is in manual mode
 print("Set coverDirectionPin to up")
 
-currentState = { 'power': False, 'jet': False, 'ionizer': False, 'swing': False, 'temperature': 22, 'fan': 'low' }
-
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    for topic in mqttTopics:
+    for topic in conf['mqttTopics']:
         (result, mid) = client.subscribe(topic)
         
         print("Got subscription result for "+topic+":"+str(result))
@@ -81,6 +77,13 @@ def on_message(client, userdata, msg):
     if msg.topic == 'ha/blind_cover/set':
         if msg.payload == 'OPEN' or msg.payload == 'CLOSE' or msg.payload == 'STOP':
             processCommand(msg.payload)
+
+    if msg.topic == 'ha/blind_cover/position':
+        if int(msg.payload) <= 100 and int(msg.payload) >= 0:
+            # calculate running time based on position
+            runtime = int(msg.payload) * coverOperationTime / 100
+            print("Running the motor for "+str(runtime)+" seconds")
+            # run the up or down command?
 
 def processCommand(state):
     print("Setting cover "+str(state))
@@ -126,14 +129,17 @@ def processCommand(state):
 
     else:
         #STOP is not really processed at this point
-	pass
+        pass
 
+parseConfig()
+conf['mqttTopics'] = ['ha/blind_cover/set', 'ha/blind_cover/position']
 client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 
-syslog.syslog('Starting blind-cover-mqtt-agent.py')
-client.username_pw_set(username=mqttUser, password=mqttPass)
+print("Starting blind-cover-mqtt-agent.py")
+if conf['mqttUser'] and conf['mqttPass']:
+    client.username_pw_set(username=conf['mqttUser'], password=conf['mqttPass'])
 
-client.connect(mqttServer, mqttPort, 60)
+client.connect(conf['mqttServer'], conf['mqttPort'], 60)
 client.loop_forever()
