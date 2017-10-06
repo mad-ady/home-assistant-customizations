@@ -36,6 +36,7 @@ for i in range(0, intervals, 1):
     except IndexError:
         group.append("""  heater_timer_group_%d:
     name: Timer group %s - %s
+    control: hidden
     entities:"""%(groupid, startTime, endTime))
 
     group[groupid]+="""\n     - input_boolean.heater_timer_%s"""%(timestamp)
