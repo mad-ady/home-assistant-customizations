@@ -1,9 +1,10 @@
 #!/usr/bin/python
 import paho.mqtt.client as mqtt
-import time
 import wiringpi2 as wpi
 import yaml
 import sys
+import threading
+import time
 
 # Prerequisites:
 # * pip: sudo apt-get install python-pip 
@@ -48,17 +49,24 @@ coverDirectionDown = 0 #the cover should lower
 
 coverOperationTime = 17 #maximum time in seconds for the motor to raise or lower the cover from start to finish
 
+activeTimer = None #reference to an active timer
+currentposition = 100 # assume the default state of the blinds to be open. 0 is closed
+startTime = 0 #remember when starting the motor
+
 #initialize the pins - output, with manual control by default
 wpi.pinMode(coverModePin, 1)
 wpi.digitalWrite(coverModePin, coverModeManual)
 print("Set coverModePin to manual mode")
+sys.stdout.flush()
 wpi.pinMode(coverDirectionPin, 1)
 wpi.digitalWrite(coverDirectionPin, coverDirectionUp) #has no effect as long as the cover is in manual mode
 print("Set coverDirectionPin to up")
+sys.stdout.flush()
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
+    sys.stdout.flush()
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
@@ -66,10 +74,12 @@ def on_connect(client, userdata, flags, rc):
         (result, mid) = client.subscribe(topic)
         
         print("Got subscription result for "+topic+":"+str(result))
+        sys.stdout.flush()
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
     print("Received command:"+msg.topic+" "+str(msg.payload))
+    sys.stdout.flush()
 
     #listen to requests, process themm
     #set the replies over mqtt
@@ -80,56 +90,120 @@ def on_message(client, userdata, msg):
 
     if msg.topic == 'ha/blind_cover/position':
         if int(msg.payload) <= 100 and int(msg.payload) >= 0:
-            # calculate running time based on position
-            runtime = int(msg.payload) * coverOperationTime / 100
-            print("Running the motor for "+str(runtime)+" seconds")
-            # run the up or down command?
+            # see in which direction and for how long we need to run the motor
+            (direction, runtime) = position2runtime(msg.payload)
+            print("Running the motor for "+str(runtime)+" seconds in direction "+ str(direction))
+            sys.stdout.flush()
+
+
+def position2runtime(newposition):
+    # calculate running time and direction based on position and current position
+    if int(newposition) > currentposition:
+        # the blind needs to go up
+        direction = coverDirectionUp
+    else:
+        # the blind needs to go down
+        direction = coverDirectionDown
+
+    runtime = abs(int(newposition) - currentposition) * coverOperationTime / 100
+    if runtime > coverOperationTime:
+        runtime = coverOperationTime
+    if runtime < 0:
+        runtime = 0
+
+    return (direction, runtime)
+
+def runtime2position(runtime, direction):
+    # calculate blind position based on a runtime, the current position and the direction
+    if direction == coverDirectionUp:
+        newposition = int(currentposition + int(runtime) * 100 / coverOperationTime)
+    else:
+        newposition = int(currentposition + int(runtime) * 100 / coverOperationTime)
+
+    if newposition > 100:
+        newposition = 100
+    if newposition < 0:
+        newposition = 0
+
+    return newposition
 
 def processCommand(state):
+    global activeTimer, startTime
     print("Setting cover "+str(state))
-    #should implement threading to be able to process commands before the blind closes/opens
-    #TODO
+    sys.stdout.flush()
+
     if state == 'OPEN':
-        #we need to open
+        #we need to open - turn off any active timers
+        if activeTimer:
+            activeTimer.cancel()
+
         #set direction first. Open means up
         wpi.digitalWrite(coverDirectionPin, coverDirectionUp)
         #set the cover to be controlled by the Odroid
         wpi.digitalWrite(coverModePin, coverModeAutomatic)
+        startTime = int(round(time.time() * 1000)) #time in ms
         print("Opening blind")
+        sys.stdout.flush()
         #tell the caller we're opening
         client.publish('ha/blind_cover/get', "opening", 0, False)
-        #now we wait for the motor to do its thing
-        time.sleep(coverOperationTime)
+        #start a thread to wait for the operation to complete and schedule a timer to finish it.
 
-        #we can now say that the cover is open
-        client.publish('ha/blind_cover/get', "open", 0, False)
-        
-        #we need to put the cover back in manual mode for the plysical switch to work
-        wpi.digitalWrite(coverModePin, coverModeManual)
-        print("Switching back to manual mode")
+        activeTimer = threading.Timer(coverOperationTime, stopBlinds, ["open"])
+        activeTimer.start()
 
     elif state == 'CLOSE':
-        #we need to close
+        # we need to close - turn off any active timers
+        if activeTimer:
+            activeTimer.cancel()
         #set direction first. Close means down
         wpi.digitalWrite(coverDirectionPin, coverDirectionDown)
         #set the cover to be controlled by the Odroid
         wpi.digitalWrite(coverModePin, coverModeAutomatic)
+        startTime = int(round(time.time() * 1000))  # time in ms
         print("Closing blind")
+        sys.stdout.flush()
         #tell the caller we're opening
         client.publish('ha/blind_cover/get', "closing", 0, False)
-        #now we wait for the motor to do its thing
-        time.sleep(coverOperationTime)
+        # start a thread to wait for the operation to complete and schedule a timer to finish it.
 
-        #we can now say that the cover is open
-        client.publish('ha/blind_cover/get', "closed", 0, False)
-        
-        #we need to put the cover back in manual mode for the plysical switch to work
-        wpi.digitalWrite(coverModePin, coverModeManual)
-        print("Switching back to manual mode")
+        activeTimer = threading.Timer(coverOperationTime, stopBlinds, ["closed"])
+        activeTimer.start()
+
+    elif state == 'STOP':
+        # we need to close - turn off any active timers
+        if activeTimer:
+            activeTimer.cancel()
+        # call stopBlinds immediately
+        stopBlinds("unknown")
 
     else:
-        #STOP is not really processed at this point
-        pass
+        # other states are not understood
+        print("State "+str(state)+" is not supported")
+        sys.stdout.flush()
+
+def stopBlinds(action, direction=None):
+    global activeTimer, startTime, currentposition
+    # we need to put the cover back in manual mode for the physical switch to work
+    wpi.digitalWrite(coverModePin, coverModeManual)
+    stopTime = int(round(time.time() * 1000))  # time in ms
+    print("Switching back to manual mode")
+    # report back the expected state of the cover
+    client.publish('ha/blind_cover/get', action, 0, False)
+    sys.stdout.flush()
+    activeTimer = None
+    if action != "open" and action != "closed":
+        #calculate how much time the blind has worked
+        runtime = int((stopTime - startTime)/1000)
+        #calculate and update the current position
+        currentposition = runtime2position(runtime, direction)
+    else:
+        startTime = 0
+        if action == "open":
+            currentposition = 100
+        if action == "closed":
+            currentposition = 0
+    print("currentposition is "+str(currentposition))
+
 
 parseConfig()
 conf['mqttTopics'] = ['ha/blind_cover/set', 'ha/blind_cover/position']
@@ -142,4 +216,6 @@ if conf['mqttUser'] and conf['mqttPass']:
     client.username_pw_set(username=conf['mqttUser'], password=conf['mqttPass'])
 
 client.connect(conf['mqttServer'], conf['mqttPort'], 60)
+print("Listen to MQTT messages...")
+sys.stdout.flush()
 client.loop_forever()
