@@ -2,6 +2,16 @@ import appdaemon.appapi as appapi
 import re
 import datetime
 
+# Turn off climate control on demand, based on input_booleans
+# Manually turn on/off heater based on those input_booleans
+# apps.yaml configuration example:
+# manual_heater:
+#   module: manual_heater
+#   class: ManualHeater
+#   climate: "climate.heater_thermostat"
+#   heater: "switch.heater"
+#   interval_length: 15
+
 class ManualHeater(appapi.AppDaemon):
     # load data from the configuration section
     interval_length = 15
