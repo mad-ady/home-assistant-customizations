@@ -40,6 +40,10 @@ wpi.wiringPiSetup()
 coverModePin = 4 #GPIO 104 on Odroid C1, Pin 16
 coverDirectionPin = 5 #GPIO #102 on Odroid C1, Pin 18
 
+#FAKE GPIOs for offline testing
+#coverModePin = 6 #GPIO 104 on Odroid C1, Pin 16
+#coverDirectionPin = 10 #GPIO #102 on Odroid C1, Pin 18
+
 #define some constants
 coverModeAutomatic = 0  #the cover is controlled by the Odroid
 coverModeManual = 1 #the cover is controlled by the physical switch
@@ -51,6 +55,7 @@ coverOperationTime = 17 #maximum time in seconds for the motor to raise or lower
 
 activeTimer = None #reference to an active timer
 currentposition = 100 # assume the default state of the blinds to be open. 0 is closed
+lastDirection = 0 # remeber the direction you're going (up = 1, down = 0)
 startTime = 0 #remember when starting the motor
 
 #initialize the pins - output, with manual control by default
@@ -92,9 +97,7 @@ def on_message(client, userdata, msg):
         if int(msg.payload) <= 100 and int(msg.payload) >= 0:
             # see in which direction and for how long we need to run the motor
             (direction, runtime) = position2runtime(msg.payload)
-            print("Running the motor for "+str(runtime)+" seconds in direction "+ str(direction))
-            sys.stdout.flush()
-
+            runMotor(runtime, direction)
 
 def position2runtime(newposition):
     # calculate running time and direction based on position and current position
@@ -113,13 +116,13 @@ def position2runtime(newposition):
 
     return (direction, runtime)
 
-def runtime2position(runtime, direction):
+def runtime2position(runtime):
     # calculate blind position based on a runtime, the current position and the direction
-    if direction == coverDirectionUp:
+    if lastDirection == coverDirectionUp:
         newposition = int(currentposition + int(runtime) * 100 / coverOperationTime)
     else:
-        newposition = int(currentposition + int(runtime) * 100 / coverOperationTime)
-
+        newposition = int(currentposition - int(runtime) * 100 / coverOperationTime)
+    print("Debug: newposition is %d" % (newposition))
     if newposition > 100:
         newposition = 100
     if newposition < 0:
@@ -127,47 +130,51 @@ def runtime2position(runtime, direction):
 
     return newposition
 
+def runMotor(duration, direction):
+    global activeTimer, startTime, lastDirection
+    print("Running the motor for " + str(duration) + " seconds in direction " + str(direction))
+    sys.stdout.flush()
+    # turn off any active timers
+    if activeTimer:
+        activeTimer.cancel()
+    # set direction first.
+    wpi.digitalWrite(coverDirectionPin, direction)
+    # set the cover to be controlled by the Odroid
+    wpi.digitalWrite(coverModePin, coverModeAutomatic)
+    startTime = int(round(time.time() * 1000)) #time in ms
+    print("Starting motor")
+    sys.stdout.flush()
+    # tell the caller we're opening/closing
+    if direction:
+        client.publish('ha/blind_cover/get', "opening", 0, False)
+    else:
+        client.publish('ha/blind_cover/get', "closing", 0, False)
+
+    # start a thread to wait for the operation to complete and schedule a timer to finish it.
+    lastDirection = direction
+    if duration == coverOperationTime:
+        # full run up or down
+        if direction:
+            activeTimer = threading.Timer(duration, stopBlinds, ["open"])
+        else:
+            activeTimer = threading.Timer(duration, stopBlinds, ["closed"])
+    else:
+        # partial control - we don't know the final position of the blinds
+        activeTimer = threading.Timer(duration, stopBlinds, ["unknown"])
+    activeTimer.start()
+
 def processCommand(state):
-    global activeTimer, startTime
+    global activeTimer, startTime, lastDirection
     print("Setting cover "+str(state))
     sys.stdout.flush()
 
     if state == 'OPEN':
-        #we need to open - turn off any active timers
-        if activeTimer:
-            activeTimer.cancel()
-
-        #set direction first. Open means up
-        wpi.digitalWrite(coverDirectionPin, coverDirectionUp)
-        #set the cover to be controlled by the Odroid
-        wpi.digitalWrite(coverModePin, coverModeAutomatic)
-        startTime = int(round(time.time() * 1000)) #time in ms
-        print("Opening blind")
-        sys.stdout.flush()
-        #tell the caller we're opening
-        client.publish('ha/blind_cover/get', "opening", 0, False)
-        #start a thread to wait for the operation to complete and schedule a timer to finish it.
-
-        activeTimer = threading.Timer(coverOperationTime, stopBlinds, ["open"])
-        activeTimer.start()
+        # run the motor for the whole coverOperationTime in the direction Up to open it.
+        runMotor(coverOperationTime, coverDirectionUp)
 
     elif state == 'CLOSE':
-        # we need to close - turn off any active timers
-        if activeTimer:
-            activeTimer.cancel()
-        #set direction first. Close means down
-        wpi.digitalWrite(coverDirectionPin, coverDirectionDown)
-        #set the cover to be controlled by the Odroid
-        wpi.digitalWrite(coverModePin, coverModeAutomatic)
-        startTime = int(round(time.time() * 1000))  # time in ms
-        print("Closing blind")
-        sys.stdout.flush()
-        #tell the caller we're opening
-        client.publish('ha/blind_cover/get', "closing", 0, False)
-        # start a thread to wait for the operation to complete and schedule a timer to finish it.
-
-        activeTimer = threading.Timer(coverOperationTime, stopBlinds, ["closed"])
-        activeTimer.start()
+        # run the motor for the whole coverOperationTime in the direction Down to close it.
+        runMotor(coverOperationTime, coverDirectionDown)
 
     elif state == 'STOP':
         # we need to close - turn off any active timers
@@ -181,12 +188,12 @@ def processCommand(state):
         print("State "+str(state)+" is not supported")
         sys.stdout.flush()
 
-def stopBlinds(action, direction=None):
+def stopBlinds(action):
     global activeTimer, startTime, currentposition
     # we need to put the cover back in manual mode for the physical switch to work
     wpi.digitalWrite(coverModePin, coverModeManual)
     stopTime = int(round(time.time() * 1000))  # time in ms
-    print("Switching back to manual mode")
+    print("Switching back to manual mode (from action %s)" % (action))
     # report back the expected state of the cover
     client.publish('ha/blind_cover/get', action, 0, False)
     sys.stdout.flush()
@@ -194,8 +201,9 @@ def stopBlinds(action, direction=None):
     if action != "open" and action != "closed":
         #calculate how much time the blind has worked
         runtime = int((stopTime - startTime)/1000)
+        print("Runtime is %d" % (runtime))
         #calculate and update the current position
-        currentposition = runtime2position(runtime, direction)
+        currentposition = runtime2position(runtime)
     else:
         startTime = 0
         if action == "open":
