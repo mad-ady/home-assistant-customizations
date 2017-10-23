@@ -3,7 +3,7 @@ Description=IR AC MQTT Agent
 After=network.target
 
 [Service]
-ExecStart=/home/adrianp/bin/ir-ac-mqtt-agent.py
+ExecStart=/usr/local/bin/ir-ac-mqtt-agent.py
 Type=simple
 Restart=always
 RestartSec=5
