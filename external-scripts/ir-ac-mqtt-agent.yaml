@@ -2,4 +2,10 @@ mqttServer: '127.0.0.1'
 mqttPort: 1883
 mqttUser: 'homeassistant'
 mqttPass: 'your-super-secret-mqtt-password'
-
+mqttTopics:
+  - 'ha/lg_ac/power/set'
+  - 'ha/lg_ac/jet/set'
+  - 'ha/lg_ac/ionizer/set'
+  - 'ha/lg_ac/swing/set'
+  - 'ha/lg_ac/temperature/set'
+  - 'ha/lg_ac/fan/set'

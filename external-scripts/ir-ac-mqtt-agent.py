@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import paho.mqtt.client as mqtt
-import syslog
 import time
 from subprocess import call
 import yaml
@@ -47,6 +46,7 @@ def on_connect(client, userdata, flags, rc):
     The callback for when the client receives a CONNACK response from the MQTT server.
     """
     print("Connected with result code "+str(rc))
+    sys.stdout.flush()
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
@@ -54,12 +54,14 @@ def on_connect(client, userdata, flags, rc):
         (result, mid) = client.subscribe(topic)
         
         print("Got subscription result for "+topic+":"+str(result))
+        sys.stdout.flush()
 
 def on_message(client, userdata, msg):
     """
     The callback for when a PUBLISH message is received from the MQTT server.
     """
     print("Received command:"+msg.topic+" "+str(msg.payload))
+    sys.stdout.flush()
 
     """
     Handle AC power on/off
@@ -153,9 +155,11 @@ def processCommand(item, state):
     Call the sendir function, update internal state and publish the state change as an MQTT message
     """
     print("Setting "+item+" "+str(state))
+    sys.stdout.flush()
     success = sendir(item+"-"+str(state).lower())
     if success:
         print("Injected IR command successfully. Updating state")
+        sys.stdout.flush()
         if isinstance( state, int ):
             #save numeric states as they are
             currentState[item] = state
@@ -168,6 +172,7 @@ def processCommand(item, state):
     else:
         #IR didn't work. Don't change the internal state, but publish it for feedback (e.g. the slider moves back)
         print("IR injection failed!")
+        sys.stdout.flush()
         client.publish('ha/lg_ac/'+item+'/get', state, 0, False)
 
 # Actually send IR codes
@@ -188,7 +193,8 @@ def sendir(code):
         time.sleep(5)
         ret = call(['/usr/sbin/service', 'lirc', 'restart'])
 
-    syslog.syslog('Sending IR code '+code)
+    print('Sending IR code '+code)
+    sys.stdout.flush()
     ret = call(['/usr/bin/irsend', 'SEND_ONCE', 'lgirplus.conf', code])
     #ret is the program return code - 0 for success.
     if ret:
@@ -209,6 +215,7 @@ client.on_connect = on_connect
 client.on_message = on_message
 
 print ('Starting ir-ac-mqtt-agent.py')
+sys.stdout.flush()
 if conf['mqttUser'] and conf['mqttPass']:
     client.username_pw_set(username=conf['mqttUser'], password=conf['mqttPass'])
 
