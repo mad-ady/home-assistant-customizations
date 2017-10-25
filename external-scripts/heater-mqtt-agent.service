@@ -3,7 +3,7 @@ Description=Heater MQTT Agent
 After=network.target
 
 [Service]
-ExecStart=/home/adrianp/bin/heater-mqtt-agent.py
+ExecStart=/usr/local/bin/heater-mqtt-agent.py
 Type=simple
 Restart=yes
 RestartSec=5
