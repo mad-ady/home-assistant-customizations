@@ -121,6 +121,8 @@ class JSONRestSensor(Entity):
         """ Parse the return text as JSON and save the json as an attribute. """
         try:
             self._attributes = json.loads(value)
+            # if the attributes were parsed, set the state as STATE_ON as a workaround for HA 0.57 state limit
+            self._state = STATE_ON
         except json.JSONDecodeError:
             self._attributes = []
             pass
