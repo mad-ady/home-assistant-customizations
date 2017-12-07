@@ -1,0 +1,24 @@
+#
+# Main arguments, all optional
+#
+title: 3.5in LCD panel - high quality 480x320 divided into 12x8 cells - Extended Menu
+widget_dimensions: [38, 38]
+widget_margins: [1, 1]
+columns: 12
+use_gass_icon: 1
+
+#
+# Layout
+#    
+layout:
+    - include: navigation-definition
+    - include: webcams
+    - home, netdata(3x2), hourlyweathernavigation(3x2) 
+    - mpd
+    - webcams, webcamliving(3x2), webcamkids(3x2)
+    - tv
+    - heating, webcambedroom(3x2), webcamkitchen(3x2)
+    - cooling
+    - blinds
+    - extendedmenu
+

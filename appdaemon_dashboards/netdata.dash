@@ -1,0 +1,32 @@
+#
+# Main arguments, all optional
+#
+title: 3.5in LCD panel - high quality 480x320 divided into 12x8 cells - Netdata
+widget_dimensions: [38, 38]
+widget_margins: [1, 1]
+columns: 12
+use_gass_icon: 1
+
+#
+# Layout
+#    
+layout:
+    - include: navigation-definition
+    - home, mynetdata(11x8) 
+    - mpd
+    - webcams
+    - tv
+    - heating
+    - cooling
+    - blinds
+    - extendedmenu
+
+mynetdata:
+    widget_type: iframe
+    refresh: 5
+    url_list:
+      - http://192.168.1.5:19999/server1.html
+      - http://192.168.1.5:19999/server2.html
+      - http://192.168.1.5:19999/server3.html
+      - http://192.168.1.5:19999/server4.html
+      - http://192.168.1.5:19999/server5.html

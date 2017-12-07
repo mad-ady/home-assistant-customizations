@@ -1,0 +1,24 @@
+streamkitchen:
+   widget_type: camera
+   entity_picture: http://192.168.1.4:8123/api/camera_proxy/camera.webcamkitchen?token=d0f3535dc316b1383a79aba692f9b78293808f759b67077e25db863fe6173378&api_password=odroid
+   refresh: 2
+
+streamliving: 
+   widget_type: camera
+   entity_picture: http://192.168.1.4:8123/api/camera_proxy/camera.webcamliving?token=10039c266aaad56967fe7a8311d6af34b8905ce4f44e615e399749eef7b703c1&api_password=odroid
+   refresh: 2
+
+streamkids:
+   widget_type: camera
+   entity_picture: http://192.168.1.4:8123/api/camera_proxy/camera.webcamkids?token=7a70d0ff468e8f77e1cd46c21447d2e6c741e9c0a9c375366ac89c7107db97b9&api_password=odroid
+   refresh: 1
+
+streambedroom:
+   widget_type: camera
+   entity_picture: http://192.168.1.4:8123/api/camera_proxy/camera.webcambedroom?token=758bee3e09bf014516c2e3087383a7333081e154c6e33fb9b13464578533cf59&api_password=odroid
+   refresh: 1
+
+streamtv:
+   widget_type: camera
+   entity_picture: http://192.168.1.4:8123/api/camera_proxy/camera.tv_living_image?token=62f78994c790a89459e2f60cc6ed80bdfce3e9b5ff5473633ba60e3d7089f0a6&api_password=odroid
+   refresh: 2

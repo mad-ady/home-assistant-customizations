@@ -1,0 +1,58 @@
+
+navigationmpdliving:
+    widget_type: navigate
+    dashboard: mpdliving
+    icon_active: fa-heart
+    icon_inactive: fa-heart
+
+navigationmpdkids:
+    widget_type: navigate
+    dashboard: mpdkids
+    icon_active: fa-child
+    icon_inactive: fa-child
+
+navigationmpdkitchen:
+    widget_type: navigate
+    dashboard: mpdkitchen
+    icon_active: mdi-fridge
+    icon_inactive: mdi-fridge
+
+mpdliving:
+    widget_type: media_player
+    entity: media_player.mpd_sufragerie
+    truncate_name: 80
+    title: "Livingroom"
+    icon_on: mdi-radio
+    icon_off: mdi-radio
+    icon_up: mdi-arrow-up-bold-circle
+    icon_down: mdi-arrow-down-bold-circle
+    level_up_style: "font-size: 150%;"
+    play_icon_style: "font-size: 150%;"
+    level_down_style: "font-size: 150%;"
+
+mpdkitchen:
+    widget_type: media_player
+    entity: media_player.mpd_bucatarie
+    truncate_name: 80
+    title: "Kitchen"
+    icon_on: mdi-radio
+    icon_off: mdi-radio
+    icon_up: mdi-arrow-up-bold-circle
+    icon_down: mdi-arrow-down-bold-circle
+    level_up_style: "font-size: 150%;"
+    play_icon_style: "font-size: 150%;"
+    level_down_style: "font-size: 150%;"
+
+mpdkids:
+    widget_type: media_player
+    entity: media_player.mpd_kids
+    truncate_name: 80
+    title: "Kids"
+    icon_on: mdi-radio
+    icon_off: mdi-radio
+    icon_up: mdi-arrow-up-bold-circle
+    icon_down: mdi-arrow-down-bold-circle
+    level_up_style: "font-size: 150%;"
+    play_icon_style: "font-size: 150%;"
+    level_down_style: "font-size: 150%;"
+

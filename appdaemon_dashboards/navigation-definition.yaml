@@ -1,0 +1,94 @@
+home:
+    widget_type: navigate
+    dashboard: "lcd35-hq"
+    icon_active: fa-home
+    icon_inactive: fa-home
+
+homesimple:
+    widget_type: navigate
+    dashboard: "lcd35-simple"
+    icon_active: fa-home
+    icon_inactive: fa-home
+
+mpd:
+    widget_type: navigate
+    dashboard: "mpdkitchen"
+    icon_active: fa-music
+    icon_inactive: fa-music
+
+webcams:
+    widget_type: navigate
+    dashboard: "webcams"
+    icon_active: fa-table
+    icon_inactive: fa-table
+
+tv:
+    widget_type: navigate
+    dashboard: "tv"
+    icon_active: mdi-television-classic
+    icon_inactive: mdi-television-classic
+    icon_style: "font-size: 1.5em !important;"
+
+webcambedroom:
+    widget_type: navigate
+    dashboard: "webcambedroom"
+    icon_active: fa-bed
+    icon_inactive: fa-bed
+
+webcamliving:
+    widget_type: navigate
+    dashboard: "webcamliving"
+    icon_active: fa-heart
+    icon_inactive: fa-heart
+
+webcamkids:
+    widget_type: navigate
+    dashboard: "webcamkids"
+    icon_active: fa-child
+    icon_inactive: fa-child
+
+webcamkitchen:
+    widget_type: navigate
+    dashboard: "webcamkitchen"
+    icon_active: mdi-fridge
+    icon_inactive: mdi-fridge
+
+blinds:
+    widget_type: navigate
+    dashboard: "blinds"
+    icon_active: mdi-blinds
+    icon_inactive: mdi-blinds
+
+heating:
+    widget_type: navigate
+    dashboard: "heating"
+    icon_active: mdi-fire
+    icon_inactive: mdi-fire
+
+cooling:
+    widget_type: navigate
+    dashboard: "cooling"
+    icon_active: mdi-snowflake
+    icon_inactive: mdi-snowflake
+
+extendedmenu:
+    widget_type: navigate
+    dashboard: "extendedmenu"
+    args:
+      timeout: 10
+      return: lcd35-hq
+    icon_active: mdi-menu
+    icon_inactive: mdi-menu
+
+hourlyweathernavigation:
+    widget_type: navigate
+    dashboard: "hourlyweather"
+    icon_active: mdi-weather-lightning-rainy
+    icon_inactive: mdi-weather-lightning-rainy
+
+netdata:
+    widget_type: navigate
+    dashboard: "netdata"
+    icon_active: mdi-gauge
+    icon_inactive: mdi-gauge
+

@@ -1,0 +1,110 @@
+#
+# Main arguments, all optional
+#
+title: 3.5in LCD panel - high quality 480x320 divided into 12x8 cells - AC
+widget_dimensions: [38, 38]
+widget_margins: [1, 1]
+columns: 12
+use_gass_icon: 1
+
+#
+# Layout
+#    
+layout:
+    - include: navigation-definition
+    - home, lg_ac_power(3x2), lg_ac_jet(3x2), lg_ac_ionizer(3x2), lg_ac_swing(2x2)
+    - mpd
+    - webcams, lg_ac_temperature(5x6), lg_ac_on_timer(2x3), lg_ac_on_hour(2x3), lg_ac_on_minute(2x3)
+    - tv
+    - heating
+    - cooling, lg_ac_off_timer(2x3), lg_ac_off_hour(2x3), lg_ac_off_minute(2x3)
+    - blinds
+    - extendedmenu
+
+lg_ac_power:
+   title: Power
+   widget_type: switch
+   entity: switch.ac_power
+   icon_on: mdi-power
+   icon_off: mdi-power
+
+lg_ac_jet:
+   title: Jet
+   widget_type: switch
+   entity: switch.ac_jet
+   icon_on: mdi-weather-windy
+   icon_off: mdi-weather-windy
+
+lg_ac_ionizer:
+   title: Ionizer
+   widget_type: switch
+   entity: switch.ac_ionizer
+   icon_on: mdi-pine-tree
+   icon_off: mdi-pine-tree
+
+lg_ac_swing:
+   title: Swing
+   widget_type: switch
+   entity: switch.ac_swing
+   icon_on: mdi-call-missed
+   icon_off: mdi-call-missed
+
+lg_ac_temperature:
+   title: Temperature
+   widget_type: input_number
+   entity: input_number.lg_ac_temperature 
+   unit_style: "color: yellow;"
+   level_style: "color: yellow; font-size: 48pt;"
+   level_up_style: "font-size: 20pt;"
+   level_down_style: "font-size: 20pt;"
+
+lg_ac_on_timer:
+   widget_type: input_boolean
+   title: AC On timer
+   entity: input_boolean.ac_on_timer_active
+   icon_on: mdi-timer
+   icon_off: mdi-timer
+
+lg_ac_off_timer:
+   widget_type: input_boolean
+   title: AC Off timer
+   entity: input_boolean.ac_off_timer_active
+   icon_on: mdi-timer-off
+   icon_off: mdi-timer-off
+
+lg_ac_on_hour:
+   title: Hour
+   widget_type: input_number
+   entity: input_number.lg_ac_on_hour
+   unit_style: "color: yellow;"
+   level_style: "color: yellow; font-size: 40pt;"
+   level_up_style: "font-size: 20pt;"
+   level_down_style: "font-size: 20pt;"
+
+
+lg_ac_on_minute:
+   title: Minute
+   widget_type: input_number
+   entity: input_number.lg_ac_on_minute
+   unit_style: "color: yellow;"
+   level_style: "color: yellow; font-size: 40pt;"
+   level_up_style: "font-size: 20pt;"
+   level_down_style: "font-size: 20pt;"
+
+lg_ac_off_hour:
+   title: Hour
+   widget_type: input_number
+   entity: input_number.lg_ac_off_hour
+   unit_style: "color: yellow;"
+   level_style: "color: yellow; font-size: 40pt;"
+   level_up_style: "font-size: 20pt;"
+   level_down_style: "font-size: 20pt;"
+
+lg_ac_off_minute:
+   title: Minute
+   widget_type: input_number
+   entity: input_number.lg_ac_off_minute
+   unit_style: "color: yellow;"
+   level_style: "color: yellow; font-size: 40pt;"
+   level_up_style: "font-size: 20pt;"
+   level_down_style: "font-size: 20pt;"

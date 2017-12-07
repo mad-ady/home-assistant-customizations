@@ -1,0 +1,36 @@
+#
+# Main arguments, all optional
+#
+title: 3.5in LCD panel - high quality 480x320 divided into 12x8 cells - Heater
+widget_dimensions: [38, 38]
+widget_margins: [1, 1]
+columns: 12
+use_gass_icon: 1
+
+#
+# Layout
+#    
+layout:
+    - include: navigation-definition
+    - include: sensors
+    - home, heater(4x4), thermostat(7x8)
+    - mpd
+    - webcams
+    - tv
+    - heating, sensorliving(2x4), sensorkids(2x4)
+    - cooling
+    - blinds
+    - extendedmenu
+
+thermostat:
+   widget_type: climate
+   title: Thermostat
+   step: 0.5
+   precision: 1
+   entity: climate.heater_thermostat
+   unit_style: "color: yellow;"
+   level_style: "color: yellow; font-size: 48pt;"
+   unit2_style: "color: yellow;"
+   level2_style: "color: yellow; font-size: 40pt;"
+   level_up_style: "font-size: 20pt;"
+   level_down_style: "font-size: 20pt;"
