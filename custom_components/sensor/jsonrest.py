@@ -84,7 +84,7 @@ class JSONRestSensor(Entity):
         self._hass = hass
         self.rest = rest
         self._name = name
-        self._attributes = []
+        self._attributes = {}
         self._state = STATE_UNKNOWN
         self._unit_of_measurement = unit_of_measurement
         self._value_template = value_template
@@ -109,23 +109,34 @@ class JSONRestSensor(Entity):
         """Get the latest data from REST API and update the state."""
         self.rest.update()
         value = self.rest.data
+        _LOGGER.debug("Raw REST data: %s" % value)
 
         if value is None:
+            _LOGGER.debug("value is None -> state UNKNOWN")
             value = STATE_UNKNOWN
         elif self._value_template is not None:
             value = self._value_template.render_with_possible_json_value(
                 value, STATE_UNKNOWN)
 
         self._state = value
+        # if the attributes were parsed, set the state as STATE_ON as a workaround for HA 0.57 state limit
+        if len(value) >= 255:
+            _LOGGER.debug("value > 255. Setting STATE_ON instead")
+            self._state = STATE_ON
 	
         """ Parse the return text as JSON and save the json as an attribute. """
         try:
-            self._attributes = json.loads(value)
-            # if the attributes were parsed, set the state as STATE_ON as a workaround for HA 0.57 state limit
-            self._state = STATE_ON
+            _LOGGER.debug("Parsing attributes...")
+            attributes = json.loads(value)
+            if isinstance(attributes, list):
+                _LOGGER.debug("Parsed attributes form a list. Adding it as 'list'")
+                self._attributes['list'] = attributes
+            else:
+                _LOGGER.debug("Attributes are not a list. Hopefully they are a dict")
+                self._attributes = attributes
         except json.JSONDecodeError:
-            self._attributes = []
-            pass
+            _LOGGER.debug("Error decoding JSON. Resetting attributes")
+            self._attributes = {}  
 
 
     @property
