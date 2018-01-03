@@ -1,0 +1,29 @@
+sensorkids:
+    widget_type: sensor
+    title: Kids
+    title_style: "font-size: 14pt;"
+    text_style: "font-size: 16pt; font-color: white;"
+    value_style: "color: yellow;"
+    units: ""
+    precision: 1
+    entity: sensor.kids_room
+
+sensorliving:
+    widget_type: sensor
+    title: Living
+    title_style: "font-size: 14pt;"
+    text_style: "font-size: 16pt; font-color: white;"
+    value_style: "color: yellow;"
+    units: ""
+    precision: 1
+    entity: sensor.living_room
+
+heater:
+    widget_type: switch
+    title: Heater
+    entity: switch.heater
+    title_style: "font-size: 14pt;"
+    widget_style: "font-size: 24pt;"
+    icon_on: fa-fire
+    icon_off: fa-fire
+

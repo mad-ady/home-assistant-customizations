@@ -1,0 +1,46 @@
+#
+# Main arguments, all optional
+#
+title: 3.5in LCD panel - high quality 480x320 divided into 12x8 cells - Home
+widget_dimensions: [38, 38]
+widget_margins: [1, 1]
+columns: 12
+use_gass_icon: 1
+
+#
+# Layout
+#    
+layout:
+    - include: navigation-definition
+    - include: sensors
+    - home, clock(4x4), weather(7x4)
+    - mpd
+    - webcams
+    - tv
+    - heating, sensorliving(2x4), sensorkids(2x4), heater(2x4), forecast(5x4)
+    - cooling
+    - blinds
+    - extendedmenu
+
+clock:
+    widget_type: clock
+    time_format: 24hr
+    show_seconds: 0 
+    time_style: "color: yellow; font-size: 40pt; font-weight: bold;"
+    date_style: "font-size: 16pt; font-weight: bold;"
+
+weather:
+    widget_type: weather
+    units: "&deg;C"
+    sub_style: "font-size: 110%; font-weight: bold;"
+    main_style: "font-size: 75%; font-weight: bold;"
+    unit_style: "font-size: 250%;"
+
+forecast:
+    widget_type: sensor
+    title: Prognoza
+    title_style: "font-size: 14pt;"
+    text_style: "font-size: 16pt; font-weight: bold;"
+    precision: 0
+    entity: sensor.dark_sky_forecast_ro
+

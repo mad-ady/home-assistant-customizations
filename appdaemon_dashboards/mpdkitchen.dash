@@ -1,0 +1,24 @@
+#
+# Main arguments, all optional
+#
+title: 3.5in LCD panel - high quality 480x320 divided into 12x8 cells - MPD
+widget_dimensions: [38, 38]
+widget_margins: [1, 1]
+columns: 12
+use_gass_icon: 1
+
+#
+# Layout
+#    
+layout:
+    - include: navigation-definition
+    - include: mpd
+    - home, navigationmpdliving(4x1), navigationmpdkids(4x1), navigationmpdkitchen(3x1)
+    - mpd, mpdkitchen(11x7)
+    - webcams
+    - tv
+    - heating
+    - cooling
+    - blinds
+    - extendedmenu
+

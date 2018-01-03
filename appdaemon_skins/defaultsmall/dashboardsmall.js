@@ -2,6 +2,8 @@ window.onload = function(){
 	console.log("Js onLoad");
 	clearIconAbsolute();
 	h2IconSize();
+	//disable scrollbars
+//	document.body.css("overflow", "hidden");
 }
 
 function clearIconAbsolute(){
@@ -12,9 +14,18 @@ function clearIconAbsolute(){
 		//console.log("Looking at "+rules[i].selectorText);
 		//do a regex to see if it's 
 		// .widget-javascript-default-.* .icon
-		if(/\.widget-javascript-default-.* \.icon/.test(rules[i].selectorText)){
+		if(/\.widget-(javascript|baseswitch)-default-.* \.icon/.test(rules[i].selectorText)){
 			console.log("Found "+rules[i].selectorText);
 			rules[i].style['position'] = "";
+		}
+		if(rules[i].selectorText == 'body'){
+			rules[i].style['overflow'] = 'hidden';
+			rules[i].style['-webkit-touch-callout'] = 'none';
+			rules[i].style['-webkit-user-select'] = 'none';
+			rules[i].style['-khtml-user-select'] = 'none';
+			rules[i].style['-moz-user-select'] = 'none';
+			rules[i].style['-ms-user-select'] = 'none';
+			rules[i].style['user-select'] = 'none';
 		}
 	} 
 }

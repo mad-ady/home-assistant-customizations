@@ -1,0 +1,71 @@
+#
+# Main arguments, all optional
+#
+title: 3.5in LCD panel - high quality 480x320 divided into 12x8 cells
+widget_dimensions: [38, 38]
+widget_margins: [1, 1]
+columns: 12
+use_gass_icon: 1
+
+#
+# Layout
+#    
+layout:
+    - include: navigation-definition
+    - include: webcams
+    - home, streamtv(10x8), tv_living_off
+    - mpd, tv_living_on
+    - webcams, tv_living_source
+    - tv, tv_living_mute
+    - heating, tv_living_volume_up
+    - cooling, tv_living_volume_down
+    - blinds, tv_living_ch_up
+    - extendedmenu, tv_living_ch_down
+
+tv_living_off:
+    widget_type: script
+    entity: script.tv_living_power_off
+    icon_on: mdi-power-plug-off
+    icon_off: mdi-power-plug-off
+
+tv_living_on:
+    widget_type: script
+    entity: script.tv_living_power_on
+    icon_on: mdi-power
+    icon_off: mdi-power
+
+tv_living_source:
+    widget_type: script
+    entity: script.tv_living_source
+    icon_on: mdi-remote
+    icon_off: mdi-remote
+
+tv_living_mute:
+    widget_type: script
+    entity: script.tv_living_mute
+    icon_on: mdi-volume-off
+    icon_off: mdi-volume-off
+
+tv_living_volume_up:
+    widget_type: script
+    entity: script.tv_living_volume_up
+    icon_on: mdi-volume-plus
+    icon_off: mdi-volume-plus
+
+tv_living_volume_down:
+    widget_type: script
+    entity: script.tv_living_volume_down
+    icon_on: mdi-volume-minus
+    icon_off: mdi-volume-minus
+
+tv_living_ch_up:
+    widget_type: script
+    entity: script.tv_living_ch_up
+    icon_on: mdi-arrow-up-thick
+    icon_off: mdi-arrow-up-thick
+
+tv_living_ch_down:
+    widget_type: script
+    entity: script.tv_living_ch_down
+    icon_on: mdi-arrow-down-thick
+    icon_off: mdi-arrow-down-thick
