@@ -17,13 +17,14 @@ import yaml
 #  sudo systemctl enable temperature-mqtt-agent
 #  sudo systemctl start temperature-mqtt-agent
 
-filename = '/sys/devices/w1_bus_master1/28-05168661eaff/w1_slave'
+#filename = '/sys/devices/w1_bus_master1/28-0516a1db5dff/w1_slave'
 valid = False
 oldValue = 0
 
 """ Parse and load the configuration file to get MQTT credentials """
 
 conf = {}
+
 
 def parseConfig():
     global conf
@@ -35,9 +36,12 @@ def parseConfig():
             print("Unable to parse configuration file /etc/temperature-mqtt-agent.yaml")
             sys.exit(1)
 
+
 """ Read temperature from sysfs and return it as a string """
 
+
 def readTemperature():
+    valid = False
     with open(filename) as f:
         for line in f:
             if re.search('crc=.*YES', line):
@@ -49,11 +53,13 @@ def readTemperature():
                 temperature = re.search('t=([0-9]+)', line)
                 # convert to degrees celsius and keep 1 digit of accuracy
                 output = "%.1f" % (float(temperature.group(1)) / 1000.0)
-                # print("Temperature is "+str(output))
+#                print("Temperature is "+str(output))
                 return output
+
 
 """ Initialize the MQTT object and connect to the server """
 parseConfig()
+filename='/sys/devices/w1_bus_master1/'+conf['sensor']+'/w1_slave'
 client = mqtt.Client()
 if conf['mqttUser'] and conf['mqttPass']:
     client.username_pw_set(username=conf['mqttUser'], password=conf['mqttPass'])
@@ -64,12 +70,15 @@ client.loop_start()
 
 while (True):
     newValue = readTemperature()
+    if newValue is None:
+        print("Ignoring incorrect temperature reading")
+        continue
     # publish the output value via MQTT if the value has changed
     if oldValue != newValue:
-        print("Temperature changed from %f to %f" % (float(oldValue), float(newValue)))
+        print("Temperature changed from %.1f to %.1f" % (float(oldValue), float(newValue)))
         sys.stdout.flush()
         client.publish(conf['mqttTopic'], newValue, 0, conf['mqttPersistent'])
         oldValue = newValue
     # sleep for a while
-    # print("Sleeping...")
+#    print("Sleeping...")
     time.sleep(conf['sleep'])

@@ -5,3 +5,4 @@ mqttPass: odroid
 mqttTopic: ha/kids_room/temperature
 mqttPersistent: True
 sleep: 10
+sensor: 28-0516866e14ff
