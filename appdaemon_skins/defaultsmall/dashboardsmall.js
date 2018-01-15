@@ -2,6 +2,8 @@ window.onload = function(){
 	console.log("Js onLoad");
 	clearIconAbsolute();
 	h2IconSize();
+    mediaButtonsPosition();
+//    mediaTitlePosition();
 	//disable scrollbars
 //	document.body.css("overflow", "hidden");
 }
@@ -41,3 +43,27 @@ function h2IconSize(){
 		}
 	}
 }
+function mediaButtonsPosition(){
+	var sheet = document.styleSheets[0];
+        var rules = sheet.cssRules || sheet.rules;
+        console.log("Extracted CSS rules");
+        for(var i=0; i < rules.length; i++){
+		if(/\.widget-basemedia-default-.* \.(next|play|previous)/.test(rules[i].selectorText)){
+			console.log("Found "+rules[i].selectorText);
+			rules[i].style['top'] = '180px';
+		}
+	}
+}
+
+function mediaTitlePosition(){
+	var sheet = document.styleSheets[0];
+        var rules = sheet.cssRules || sheet.rules;
+        console.log("Extracted CSS rules");
+        for(var i=0; i < rules.length; i++){
+		if(/\.widget-basemedia-default-.* \.media_title/.test(rules[i].selectorText)){
+			console.log("Found "+rules[i].selectorText);
+			rules[i].style['top'] = '30px';
+		}
+	}
+}
+
