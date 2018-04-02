@@ -53,6 +53,11 @@ def readTemperature():
                 temperature = re.search('t=([0-9]+)', line)
                 # convert to degrees celsius and keep 1 digit of accuracy
                 output = "%.1f" % (float(temperature.group(1)) / 1000.0)
+                # ignore extreme temperatures
+                if float(output) < -10.0 or float(output) > 45.0:
+                    print("Read %f" % float(output))
+                    return None
+
 #                print("Temperature is "+str(output))
                 return output
 
