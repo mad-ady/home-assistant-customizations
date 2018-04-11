@@ -1,0 +1,13 @@
+[Unit]
+Description=PIR MQTT Agent
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/pir-mqtt-agent.py
+Type=simple
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+

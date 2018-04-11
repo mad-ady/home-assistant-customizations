@@ -1,0 +1,8 @@
+mqttServer: 127.0.0.1
+mqttPort: 1883
+mqttUser: odroid
+mqttPass: odroid
+mqttTopic: ha/livingroom/motion
+mqttPersistent: True
+pin: 1
+persistence: 10
