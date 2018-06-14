@@ -20,6 +20,10 @@ function clearIconAbsolute(){
 			console.log("Found "+rules[i].selectorText);
 			rules[i].style['position'] = "";
 		}
+		if(/\.widget-(basedisplay)-default-.* \.valueunit/.test(rules[i].selectorText)){
+			console.log("Found "+rules[i].selectorText);
+			rules[i].style['position'] = 'absolute';
+		}
 		if(rules[i].selectorText == 'body'){
 			rules[i].style['overflow'] = 'hidden';
 			rules[i].style['-webkit-touch-callout'] = 'none';
