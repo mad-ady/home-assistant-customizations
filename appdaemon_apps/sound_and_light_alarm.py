@@ -1,4 +1,4 @@
-import appdaemon.appapi as appapi
+import appdaemon.plugins.hass.hassapi as hass
 import re
 import time
 
@@ -17,7 +17,7 @@ import time
 
 """
 
-class SoundAndLightAlarm(appapi.AppDaemon):
+class SoundAndLightAlarm(hass.Hass):
     #load data from the configuration section
     media_player=None
     light=None
