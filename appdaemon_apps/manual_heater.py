@@ -1,8 +1,8 @@
-import appdaemon.appapi as appapi
+import appdaemon.plugins.hass.hassapi as hass
 import re
 import datetime
 
-class ManualHeater(appapi.AppDaemon):
+class ManualHeater(hass.Hass):
     #load data from the configuration section
     interval_length = 15
     climate = "climate.heater_thermostat"
@@ -68,6 +68,15 @@ class ManualHeater(appapi.AppDaemon):
     # take over the heater controls
     def controlHeater(self, newstate, oldstate):
         self.log("__function__@__line__: newstate: %s, oldstate: %s" % (newstate, oldstate))
+        # see if we need to touch anything
+        appdaemonEnabled = eval("self.entities.input_boolean.appdaemon_heater_timer.state");
+        #elf.log("__function__@__line__: appdaemon_heater_timer is %s" % appdaemonEnabled)
+         
+        if appdaemonEnabled == "off":
+            self.log("__function__@__line__: appdaemon_heater_timer is not enabled %s" % appdaemonEnabled)
+            return
+
+
         thermostat_threshold = eval("self.entities."+self.climate+".attributes.temperature")
         thermostat_current = eval("self.entities."+self.climate+".attributes.current_temperature")
         self.log("__function__@__line__: thermostat threshold: %f, thermostat current temperature: %f" % (thermostat_threshold, thermostat_current))
@@ -82,9 +91,9 @@ class ManualHeater(appapi.AppDaemon):
                 self.call_service("homeassistant/turn_on", entity_id = self.heater)
         else:
             #set climate on
-            if eval("self.entities." + self.climate + ".attributes.operation_mode") != "auto":
+            if eval("self.entities." + self.climate + ".attributes.operation_mode") != "heat":
                 self.log("__function__@__line__: Turning on climate control")
-                self.call_service("climate/set_operation_mode", entity_id=self.climate, operation_mode="auto")
+                self.call_service("climate/set_operation_mode", entity_id=self.climate, operation_mode="heat")
             #set heater off
             if eval("self.entities." + self.heater + ".state") != "off" and thermostat_current >= thermostat_threshold:
                 self.log("__function__@__line__: Turning off heater switch")
