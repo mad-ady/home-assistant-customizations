@@ -16,9 +16,13 @@ function clearIconAbsolute(){
 		//console.log("Looking at "+rules[i].selectorText);
 		//do a regex to see if it's 
 		// .widget-javascript-default-.* .icon
-		if(/\.widget-(javascript|baseswitch)-default-.* \.icon/.test(rules[i].selectorText)){
+		if(/\.widget-(javascript|baseswitch|basejavascript)-default-.* \.icon/.test(rules[i].selectorText)){
 			console.log("Found "+rules[i].selectorText);
 			rules[i].style['position'] = "";
+		}
+		if(/\.widget-(basedisplay)-default-.* \.valueunit/.test(rules[i].selectorText)){
+			console.log("Found "+rules[i].selectorText);
+			rules[i].style['position'] = 'absolute';
 		}
 		if(rules[i].selectorText == 'body'){
 			rules[i].style['overflow'] = 'hidden';

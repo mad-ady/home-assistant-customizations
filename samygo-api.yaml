@@ -1,12 +1,21 @@
 #This should be part of your HA configuration.yaml
 
-#define sensors. The JSONREST sensor makes the query and stores all metadata
-#while the templated sensors extract the metadata from the JSONREST sensor
+#define sensors. 
 sensor:
-  - platform: jsonrest
+  - platform: rest
     resource: !secret samygo_tv_living_channelinfo
     method: GET
     name: TV Living ChannelInfo
+    json_attributes:
+      - source
+      - pvr_status
+      - power_state
+      - tv_mode
+      - volume
+      - channel_number
+      - channel_name
+      - program_name
+      - resolution
     scan_interval: '00:05'
   - platform: template
     sensors:
