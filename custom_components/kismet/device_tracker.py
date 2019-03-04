@@ -35,7 +35,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_KISMET_PORT, default=2501): cv.positive_int,
     vol.Optional(CONF_SSIDS, default=[]): cv.ensure_list,
     vol.Optional(CONF_CLIENTS, default=[]): cv.ensure_list,
-    vol.Optional(CONF_SCAN_INTERVAL): cv.positive_timedelta
+    vol.Optional(CONF_SCAN_INTERVAL): cv.time_period_seconds
 })
 
 
