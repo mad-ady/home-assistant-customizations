@@ -10,6 +10,7 @@ import re
 import urllib
 import requests
 import json
+import curlify
 from collections import namedtuple
 
 import voluptuous as vol
@@ -70,7 +71,8 @@ class KismetDeviceScanner(DeviceScanner):
         self.port = config[CONF_KISMET_PORT]
         self.user = config[CONF_KISMET_USER]
         self.password = config[CONF_KISMET_PASS]
-        self.scan_interval = config[CONF_SCAN_INTERVAL]
+        #self.scan_interval = config[CONF_SCAN_INTERVAL]
+        self.scan_interval = timedelta(seconds=35)
         #self.scan_interval = 35
         self.ssids = config[CONF_SSIDS]
         self.clients = config[CONF_CLIENTS]
@@ -85,13 +87,13 @@ class KismetDeviceScanner(DeviceScanner):
 #            self.latitude = hass.config.latitude
         
 
-        _LOGGER.debug("Params:"+"server: "+self.server+", port: "+str(self.port)+", scan_interval (type "+str(type(self.scan_interval))+"): "+str(self.scan_interval))
+        _LOGGER.debug("["+self.server+"] "+"Params:"+"server: "+self.server+", port: "+str(self.port)+", scan_interval (type "+str(type(self.scan_interval))+"): "+str(self.scan_interval))
 
         #check that either clients or ssids has at least an entry
         if len(self.ssids) or len(self.clients):
-            _LOGGER.info("Scanner initialized for "+str(len(self.ssids))+" SSIDs and "+str(len(self.clients))+" clients")
+            _LOGGER.info("["+self.server+"] "+"Scanner initialized for "+str(len(self.ssids))+" SSIDs and "+str(len(self.clients))+" clients")
         else:
-            _LOGGER.error("Kismet device_tracker requires at least a SSID or a client in the configuration")
+            _LOGGER.error("["+self.server+"] "+"Kismet device_tracker requires at least a SSID or a client in the configuration")
 
 #    @property
 #    def latitude(self):
@@ -113,18 +115,18 @@ class KismetDeviceScanner(DeviceScanner):
         """Scan for new devices and return a list with found MACs."""
         self._update_info()
 
-        _LOGGER.debug("Kismet last results %s", self.last_results)
+        _LOGGER.debug("["+self.server+"] "+"Kismet last results %s", self.last_results)
 
         return [device.mac for device in self.last_results]
 
     def get_device_name(self, device):
         """Return the name of the given device or None if we don't know."""
-        _LOGGER.debug("Called get_device_name with device = "+str(device))
+        _LOGGER.debug("["+self.server+"] "+"Called get_device_name with device = "+str(device))
         filter_named = [result.last_ssid for result in self.last_results
                         if result.mac == device]
 
         if filter_named:
-            _LOGGER.debug("Returning name " + str(filter_named[0]) + " for client "+ str(device) )
+            _LOGGER.debug("["+self.server+"] "+"Returning name " + str(filter_named[0]) + " for client "+ str(device) )
             return filter_named[0]
         return None
 
@@ -133,7 +135,7 @@ class KismetDeviceScanner(DeviceScanner):
 
         Returns boolean if scanning successful.
         """
-        _LOGGER.debug("Preparing kismet query...")
+        _LOGGER.debug("["+self.server+"] "+"Preparing kismet query...")
         last_results = []
         #prepare the query
 
@@ -150,17 +152,17 @@ class KismetDeviceScanner(DeviceScanner):
             parameters["fields"].append(client_gps_prefix)
 
         for ssid in self.ssids:
-            _LOGGER.debug("Adding SSID " + ssid + "...")
+            _LOGGER.debug("["+self.server+"] "+"Adding SSID " + ssid + "...")
             parameters["regex"].append(["kismet.device.base.name", str(ssid)])
         
         for client in self.clients:
-            _LOGGER.debug("Adding client " + client + "...")
+            _LOGGER.debug("["+self.server+"] "+"Adding client " + client + "...")
             parameters["regex"].append(["kismet.device.base.macaddr", str(client).upper()])
         
 
         #payload = "json="+urllib.parse.quote_plus(json.dumps(parameters))
         payload = "json="+json.dumps(parameters)
-        _LOGGER.debug("Making request with this payload:"+payload)
+        _LOGGER.debug("["+self.server+"] "+"Making request with this payload:"+payload)
 
         try:
             r = requests.post("http://"+self.server+":"+str(self.port)+"/devices/last-time/"+"-"+str(self.scan_interval.total_seconds())+"/devices.json",
@@ -176,9 +178,11 @@ class KismetDeviceScanner(DeviceScanner):
                     #[{'kismet.device.base.macaddr': 'AA:BB:CC:DD:EE:FF', 'kismet.device.base.name': 'My Device Name',
                     #  'dot11.[probed/advertised]ssid.location': { ... } }]
 
-                    _LOGGER.info(r.json())
+                    _LOGGER.info("["+self.server+"] "+str(r.json()))
+                    location = None
+
                     for pair in r.json():
-                        _LOGGER.debug("Found device "+str(pair['kismet.device.base.macaddr']))
+                        _LOGGER.debug("["+self.server+"] "+"Found device "+str(pair['kismet.device.base.macaddr']))
 
                         if "dot11.probedssid.location" in pair and pair["dot11.probedssid.location"] != 0:
                             location = pair["dot11.probedssid.location"]
@@ -188,22 +192,33 @@ class KismetDeviceScanner(DeviceScanner):
                          
                         if location and "kismet.common.location.loc_valid" in location and location["kismet.common.location.loc_valid"] == 1:
                             # instead of delving further into the structure, we use the integer coordinates
-                            lat = location["kismet.common.location.avg_lat"] * .000001
-                            lon = location["kismet.common.location.avg_lon"] * .000001
+                            #lat = location["kismet.common.location.avg_lat"] * .000001
+                            #lon = location["kismet.common.location.avg_lon"] * .000001
+                            lat = 0.0
+                            lon = 0.0
+                            if "kismet.common.location.avg_loc" in location:
+                                lat = location["kismet.common.location.avg_loc"]["kismet.common.location.lat"]
+                                lon = location["kismet.common.location.avg_loc"]["kismet.common.location.lon"]
+
                             last_results.append(DeviceGPS(pair["kismet.device.base.macaddr"].upper(), pair["kismet.device.base.name"], (lat,lon), now))
                         else:
-                            _LOGGER.debug("Couldn't find GPS Coordinates in result..")
+                            _LOGGER.debug("["+self.server+"] "+"Couldn't find GPS Coordinates in result..")
+                            _LOGGER.debug("["+self.server+"] "+"Try to reproduce with: "+curlify.to_curl(r.request))
                             last_results.append(Device(pair["kismet.device.base.macaddr"].upper(), pair["kismet.device.base.name"], now))
                 else:
-                    _LOGGER.error(f"Got an error in the kismet reply: {r.text}")
-                    pass
+                    if r.text == "[]":
+                        _LOGGER.debug(f"[{self.server}] Nobody in range...")
+                    else:
+                        _LOGGER.error(f"[{self.server}] Got an error in the kismet reply: {r.text}")
+                        _LOGGER.debug(f"[{self.server}] Try to reproduce with: "+curlify.to_curl(r.request))
             else:
-                _LOGGER.error(f"Got an error in the kismet query. Error code {r.status_code}, reply text {r.text}")
+                _LOGGER.error(f"[{self.server}] Got an error in the kismet query. Error code {r.status_code}, reply text {r.text}")
+                _LOGGER.debug(f"[{self.server}] Try to reproduce with: "+curlify.to_curl(r.request))
 
         except requests.exceptions.ConnectionError:
-            _LOGGER.error("Error connecting to kismet instance")
+            _LOGGER.error("["+self.server+"] "+"Error connecting to kismet instance")
 
         self.last_results = last_results
 
-        _LOGGER.debug("Kismet scan finished")
+        _LOGGER.debug("["+self.server+"] "+"Kismet scan finished")
         return True

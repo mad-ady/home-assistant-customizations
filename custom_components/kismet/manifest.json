@@ -3,7 +3,8 @@
       "name": "Kismet tracker",
       "documentation": "https://github.com/mad-ady/home-assistant-customizations/tree/master/custom_components/kismet",
       "requirements": [
-           "requests"
+           "requests",
+	   "curlify"
       ],
       "dependencies": [],
       "codeowners": []
