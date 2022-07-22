@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import paho.mqtt.client as mqtt
-import wiringpi2 as wpi
+import odroid_wiringpi as wpi
 import yaml
 import sys
 import threading
@@ -9,8 +9,7 @@ import time
 # Prerequisites:
 # * pip: sudo apt-get install python-pip 
 # * wiringPi: http://odroid.com/dokuwiki/doku.php?id=en:c1_tinkering#python_example
-# * paho-mqtt: pip install paho-mqtt
-# * python-yaml: sudo apt-get install python-yaml
+# * paho-mqtt: pip3 install paho-mqtt pyyaml
 
 # Configuration file goes in /etc/blind-cover-mqtt-agent.yaml and should contain your mqtt broker details
 
@@ -28,7 +27,7 @@ def parseConfig():
     global conf
     with open("/etc/blind-cover-mqtt-agent.yaml", 'r') as stream:
         try:
-           conf = yaml.load(stream)
+           conf = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
             print(exc)
             print("Unable to parse configuration file /etc/blind-cover-mqtt-agent.yaml")
@@ -37,8 +36,8 @@ def parseConfig():
 #initialize wiringPi
 wpi.wiringPiSetup()
 
-coverModePin = 4 #GPIO 104 on Odroid C1, Pin 16
-coverDirectionPin = 5 #GPIO #102 on Odroid C1, Pin 18
+coverModePin = 4 #GPIO 104 on Odroid C1, Pin 16, GPIO 236
+coverDirectionPin = 5 #GPIO #102 on Odroid C1, Pin 18, GPIO233
 
 #FAKE GPIOs for offline testing
 #coverModePin = 6 #GPIO 104 on Odroid C1, Pin 16
@@ -51,12 +50,12 @@ coverModeManual = 1 #the cover is controlled by the physical switch
 coverDirectionUp = 1 #the cover should raise
 coverDirectionDown = 0 #the cover should lower
 
-coverOperationTime = 17 #maximum time in seconds for the motor to raise or lower the cover from start to finish
+coverOperationTime = 18 #maximum time in seconds for the motor to raise or lower the cover from start to finish
 
 activeTimer = None #reference to an active timer
 currentposition = 100 # assume the default state of the blinds to be open. 0 is closed
 lastDirection = 0 # remeber the direction you're going (up = 1, down = 0)
-startTime = 0 #remember when starting the motor
+startTime = int(round(time.time() * 1000)) #remember when starting the motor
 
 #initialize the pins - output, with manual control by default
 wpi.pinMode(coverModePin, 1)
@@ -90,7 +89,10 @@ def on_message(client, userdata, msg):
     #set the replies over mqtt
 
     if msg.topic == 'ha/blind_cover/set':
-        if msg.payload == 'OPEN' or msg.payload == 'CLOSE' or msg.payload == 'STOP':
+        #print("Inside ha/blind_cover/set")
+        #print(type(msg.payload))
+        if msg.payload == 'OPEN'.encode('utf-8') or msg.payload == 'CLOSE'.encode('utf-8') or msg.payload == 'STOP'.encode('utf-8'):
+            #print("Matched payload")
             processCommand(msg.payload)
 
     if msg.topic == 'ha/blind_cover/position':
@@ -165,18 +167,18 @@ def runMotor(duration, direction):
 
 def processCommand(state):
     global activeTimer, startTime, lastDirection
-    print("Setting cover "+str(state))
+    print("Setting cover "+str(state, 'utf-8'))
     sys.stdout.flush()
 
-    if state == 'OPEN':
+    if state == 'OPEN'.encode('utf-8'):
         # run the motor for the whole coverOperationTime in the direction Up to open it.
         runMotor(coverOperationTime, coverDirectionUp)
 
-    elif state == 'CLOSE':
+    elif state == 'CLOSE'.encode('utf-8'):
         # run the motor for the whole coverOperationTime in the direction Down to close it.
         runMotor(coverOperationTime, coverDirectionDown)
 
-    elif state == 'STOP':
+    elif state == 'STOP'.encode('utf-8'):
         # we need to close - turn off any active timers
         if activeTimer:
             activeTimer.cancel()
@@ -185,7 +187,7 @@ def processCommand(state):
 
     else:
         # other states are not understood
-        print("State "+str(state)+" is not supported")
+        print("State "+str(state, 'utf-8')+" is not supported")
         sys.stdout.flush()
 
 def stopBlinds(action):
@@ -195,6 +197,7 @@ def stopBlinds(action):
     stopTime = int(round(time.time() * 1000))  # time in ms
     print("Switching back to manual mode (from action %s)" % (action))
     # report back the expected state of the cover
+    print("Publishing new state ha/blind_cover/get: {}".format(action))
     client.publish('ha/blind_cover/get', action, 0, False)
     sys.stdout.flush()
     activeTimer = None
@@ -210,6 +213,7 @@ def stopBlinds(action):
             currentposition = 100
         if action == "closed":
             currentposition = 0
+    client.publish('ha/blind_cover/position/get', currentposition, 0, False)
     print("currentposition is "+str(currentposition))
 
 
