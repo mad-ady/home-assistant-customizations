@@ -1,5 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import paho.mqtt.client as mqtt
+import syslog
 import time
 from subprocess import call
 import yaml
@@ -23,17 +24,20 @@ import sys
 Parse and load the configuration file to get MQTT credentials
 """
 
-conf={}
-def parseConfig():
-    global conf
-    with open("/etc/ir-ac-mqtt-agent.yaml", 'r') as stream:
-        try:
-           conf = yaml.load(stream)
-        except yaml.YAMLError as exc:
-            print(exc)
-            print("Unable to parse configuration file /etc/ir-ac-mqtt-agent.yaml")
-            sys.exit(1)
+conf=[]
+with open("/etc/ir-ac-mqtt-agent.yaml", 'r') as stream:
+    try:
+       conf = yaml.safe_load(stream)
+    except yaml.YAMLError as exc:
+       print(exc)
+       print("Unable to parse configuration file /etc/ir-ac-mqtt-agent.yaml")
+       sys.exit(1)
 
+mqttServer = conf['mqttServer']
+mqttPort = conf['mqttPort']
+mqttTopics = ['ha/lg_ac/power/set', 'ha/lg_ac/jet/set', 'ha/lg_ac/ionizer/set', 'ha/lg_ac/swing/set', 'ha/lg_ac/temperature/set', 'ha/lg_ac/fan/set' ]
+mqttUser = conf['mqttUser']
+mqttPass = conf['mqttPass']
 
 """
 Define a state object to preserve an internal AC state so that we can have more complex decisions later
@@ -46,26 +50,34 @@ def on_connect(client, userdata, flags, rc):
     The callback for when the client receives a CONNACK response from the MQTT server.
     """
     print("Connected with result code "+str(rc))
-    sys.stdout.flush()
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    for topic in conf['mqttTopics']:
+    for topic in mqttTopics:
         (result, mid) = client.subscribe(topic)
         
         print("Got subscription result for "+topic+":"+str(result))
-        sys.stdout.flush()
 
 def on_message(client, userdata, msg):
     """
     The callback for when a PUBLISH message is received from the MQTT server.
     """
+
+    # convert bytes (from mqtt) to string
+    #msg.topic = msg.topic.decode('utf-8')
+    msg.payload = msg.payload.decode('utf-8')
     print("Received command:"+msg.topic+" "+str(msg.payload))
-    sys.stdout.flush()
+
+    """
+    listen to requests, process them and call the IR message
+    set the replies over mqtt
+    """
+
 
     """
     Handle AC power on/off
     """
+    
     if msg.topic == 'ha/lg_ac/power/set':
         if msg.payload == 'ON' or msg.payload == 'OFF':
             processCommand('power', msg.payload)
@@ -150,16 +162,15 @@ def on_message(client, userdata, msg):
                         currentState['jet'] = False
                         client.publish('ha/lg_ac/jet/get', 'OFF', 0, False)
 
+
 def processCommand(item, state):
     """
     Call the sendir function, update internal state and publish the state change as an MQTT message
     """
     print("Setting "+item+" "+str(state))
-    sys.stdout.flush()
     success = sendir(item+"-"+str(state).lower())
     if success:
         print("Injected IR command successfully. Updating state")
-        sys.stdout.flush()
         if isinstance( state, int ):
             #save numeric states as they are
             currentState[item] = state
@@ -172,8 +183,8 @@ def processCommand(item, state):
     else:
         #IR didn't work. Don't change the internal state, but publish it for feedback (e.g. the slider moves back)
         print("IR injection failed!")
-        sys.stdout.flush()
         client.publish('ha/lg_ac/'+item+'/get', state, 0, False)
+
 
 # Actually send IR codes
 # Returns True if there was no problem reported by lirc, False otherwise
@@ -181,20 +192,19 @@ def sendir(code):
     """
     Send IR codes with the help of irsend (lirc). The code names are derived from the item name and lowercase state.
     E.g.: temperature-22, fan-high, power-on, jet-off.
-    Returns True on success and False otherwise
+    Returns True on succes and False otherwise
     """
     success = False
-    
+    #time.sleep(10)    
     #due to a bug in lirc/ir module,  we need to restart lirc before/after every code
-    ret = call(['/usr/sbin/service', 'lirc', 'restart'])
+    ret = call(['/usr/sbin/service', 'lircd', 'restart'])
     #sometimes lirc fails to restart if restarted too fast (e.g. on multiple commands)
     if ret:
         #try again after a delay
         time.sleep(5)
-        ret = call(['/usr/sbin/service', 'lirc', 'restart'])
+        ret = call(['/usr/sbin/service', 'lircd', 'restart'])
 
-    print('Sending IR code '+code)
-    sys.stdout.flush()
+    syslog.syslog('Sending IR code '+code)
     ret = call(['/usr/bin/irsend', 'SEND_ONCE', 'lgirplus.conf', code])
     #ret is the program return code - 0 for success.
     if ret:
@@ -208,16 +218,13 @@ def sendir(code):
 """
 Initialize the MQTT object and connect to the server, looping forever waiting for messages
 """
-parseConfig()
 
 client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 
-print ('Starting ir-ac-mqtt-agent.py')
-sys.stdout.flush()
-if conf['mqttUser'] and conf['mqttPass']:
-    client.username_pw_set(username=conf['mqttUser'], password=conf['mqttPass'])
+syslog.syslog('Starting ir-ac-mqtt-agent.py')
+client.username_pw_set(username=mqttUser, password=mqttPass)
 
-client.connect(conf['mqttServer'], conf['mqttPort'], 60)
+client.connect(mqttServer, mqttPort, 60)
 client.loop_forever()
