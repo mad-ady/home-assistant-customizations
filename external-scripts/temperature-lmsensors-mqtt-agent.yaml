@@ -1,0 +1,21 @@
+mqttServer: 127.0.0.1
+mqttPort: 1883
+mqttUser: odroid
+mqttPass: odroid
+mqttPersistent: True
+sleep: 10
+sensors:
+  - name: Weatherboard Zero Temperature
+    chip: shtc1-i2c-0-70
+    sensor: temp1
+    mqttTopic: dev/weatherboard_zero/temperature
+  - name: Weatherboard Zero Humidity
+    chip: shtc1-i2c-0-70
+    sensor: humidity1
+    mqttTopic: dev/weatherboard_zero/humidity
+  - name: SOC Temperature
+    chip: soc_thermal-virtual-0
+    sensor: temp1
+    mqttTopic: dev/m1s/temperature
+
+
