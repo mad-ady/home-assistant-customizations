@@ -1,6 +1,7 @@
 [Unit]
 Description=Temperature MQTT Agent, read from lmsensors
-After=network.target
+Wants=network-online.target
+After=network.target network-online.target
 
 [Service]
 ExecStart=/usr/local/bin/temperature-lmsensors-mqtt-agent.py
