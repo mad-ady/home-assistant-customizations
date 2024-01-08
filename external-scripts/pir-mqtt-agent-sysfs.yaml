@@ -1,0 +1,9 @@
+mqttServer: 127.0.0.1
+mqttPort: 1883
+mqttUser: odroid
+mqttPass: odroid
+mqttTopic: ha/hallway/motion
+mqttPersistent: True
+gpio: 152
+persistence: 300
+sleep: 5
